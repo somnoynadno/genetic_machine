@@ -109,8 +109,8 @@ class Searhing_Machine():
 def test1(program):
 	arr = [1]
 	a = 1
-	test1 = Searhing_Machine(arr, a)
-	ans, e, w = test1.execute(program)
+	test = Searhing_Machine(arr, a)
+	ans, e, w = test.execute(program)
 	if ans == None:
 		return False
 	if arr[ans] == a:
@@ -118,10 +118,32 @@ def test1(program):
 	return False
 
 def test2(program):
-	arr = [-3, 0, 0, -2, 4, 3]
+	arr = [5, 0, 0, 2, 4, 3]
 	a = 3
-	test1 = Searhing_Machine(arr, a)
-	ans, e, w = test1.execute(program)
+	test = Searhing_Machine(arr, a)
+	ans, e, w = test.execute(program)
+	if ans == None:
+		return False
+	if arr[ans] == a:
+		return True
+	return False
+
+def test3(program):
+	arr = [4, 3, 2, 1]
+	a = 2
+	test = Searhing_Machine(arr, a)
+	ans, e, w = test.execute(program)
+	if ans == None:
+		return False
+	if arr[ans] == a:
+		return True
+	return False
+
+def test4(program):
+	arr = [0, 0, 5, 7, 0, 10, 11, 9]
+	a = 10
+	test = Searhing_Machine(arr, a)
+	ans, e, w = test.execute(program)
 	if ans == None:
 		return False
 	if arr[ans] == a:
@@ -140,11 +162,9 @@ class Genetic():
 		tier_WA = list()
 		tier_fatal = list()
 
-		arr = [7, 14, 15, 11, 22, 18, 10, 1, 2, 17,
-		12, 21, 7, 3, 22, 1, 21, 13, 5, 18, 18, 9,
-		11, 22, 5, 23, 16, 9, 18, 7, 15, 19, 1, 4, 5]
-		a = 21
+		a, arr = training_set
 
+		# print(arr, a)
 		machine = Searhing_Machine(arr, a)
 
 		# fitness function
@@ -155,14 +175,19 @@ class Genetic():
 			program = self.generate_random_program()
 			ans, e, w = machine.execute(program)
 			if ans != None:
+				print(ans)
 				if arr[ans] == a:
 					if test1(program):
 						if test2(program):
-							self.answer.append(program)
+							if test3(program):
+								if test4(program):
+									self.answer.append(program.copy())
 				if len(tier_WA) < WA_num:
 					w_average += len(w)
 					tier_WA.append(program)
 			else:
+				if "Corrupted program" in w:
+					program = self.fix(program)
 				if len(tier_fatal) < fatal_num:
 					tier_fatal.append(program)
 			if len(tier_fatal) == fatal_num and len(tier_WA) == WA_num:
@@ -172,7 +197,7 @@ class Genetic():
 		w_average /= WA_num
 
 		# main training
-		for __ in range(epoh//800):
+		for __ in range(epoh):
 			# trying to mofify WA_tier members
 			# and if their fitness better than average
 			# put them back to WA_tier
@@ -181,21 +206,31 @@ class Genetic():
 					program1 = self.reduce(program)
 					ans, e, w = machine.execute(program1)
 					if ans != None:
-						if test1(program1):
-							if test2(program1):
-								self.answer.append(program1)
+						if arr[ans] == a:
+							if test1(program1):
+								if test2(program1):
+									# print(1, program1)
+									self.answer.append(program1.copy())
 						if len(w) < w_average:
-							tier_WA[i] = program2
+							tier_WA[i] = program1
 
 				program2 = self.mutation(program)
 				ans, e, w = machine.execute(program2)
 				if ans != None:
-					if test1(program2):
-						if test2(program2):
-							self.answer.append(program2)
+					if arr[ans] == a:
+						if test1(program2):
+							if test2(program2):
+								# print(2, program2)
+								self.answer.append(program2.copy())
 					if len(w) < w_average:
 						tier_WA[i] = program2
 			# TODO: modify fatal_tier
+
+	# fix corrupted crash
+	def fix_program(self, program):
+		program.append(self.executable_list[randint(0, len(self.executable_list)-1)])
+		program.append(self.executable_list[randint(0, len(self.executable_list)-1)])
+		return program
 
 	def generate_shuffle(self):
 		program = self.executable_list.copy()
@@ -235,8 +270,11 @@ def main():
 
 	g = Genetic(executable_list)
 
-	epoh = 800
-	g.run(epoh)
+	epoh = 80
+	training_set = (21, [7, 14, 15, 11, 22, 18, 10, 1, 2, 17,
+		12, 21, 7, 3, 22, 1, 21, 13, 5, 18, 18, 9,
+		11, 22, 5, 23, 16, 9, 18, 7, 15, 19, 1, 4, 5])
+	g.run(epoh, training_set)
 	ans = g.predict()
 	print(ans)
 
